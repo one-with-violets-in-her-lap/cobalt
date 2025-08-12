@@ -130,7 +130,9 @@ export const services = {
         patterns: [
             ":author/:song/s-:accessKey",
             ":author/:song",
-            ":shortLink"
+            ":shortLink",
+	    ":author/sets/:playlist",
+	    ":author/sets/:playlist/s-:accessKey",
         ],
         subdomains: ["on", "m"],
     },

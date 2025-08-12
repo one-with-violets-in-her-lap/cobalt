@@ -32,7 +32,7 @@ export const testers = {
 
     "soundcloud": pattern =>
         (pattern.author?.length <= 255 && pattern.song?.length <= 255)
-        || pattern.shortLink?.length <= 32,
+        || pattern.shortLink?.length <= 32 || (pattern.author?.length <= 255 && pattern.playlist?.length <= 255),
 
     "snapchat": pattern =>
         (pattern.username?.length <= 32 && (!pattern.storyId || pattern.storyId?.length <= 255))

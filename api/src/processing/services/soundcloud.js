@@ -1,15 +1,22 @@
 import { env } from "../../config.js";
 import { resolveRedirectingURL } from "../url.js";
+import { createStream } from "../../stream/manage.js";
 
 const cachedID = {
-    version: '',
-    id: ''
-}
+    version: "",
+    id: "",
+};
 
 async function findClientID() {
     try {
-        const sc = await fetch('https://soundcloud.com/').then(r => r.text()).catch(() => {});
-        const scVersion = String(sc.match(/<script>window\.__sc_version="[0-9]{10}"<\/script>/)[0].match(/[0-9]{10}/));
+        const sc = await fetch("https://soundcloud.com/")
+            .then((r) => r.text())
+            .catch(() => {});
+        const scVersion = String(
+            sc
+                .match(/<script>window\.__sc_version="[0-9]{10}"<\/script>/)[0]
+                .match(/[0-9]{10}/),
+        );
 
         if (cachedID.version === scVersion) {
             return cachedID.id;
@@ -21,14 +28,16 @@ async function findClientID() {
         for (let script of scripts) {
             const url = script[1];
 
-            if (!url?.startsWith('https://a-v2.sndcdn.com/')) {
+            if (!url?.startsWith("https://a-v2.sndcdn.com/")) {
                 return;
             }
 
-            const scrf = await fetch(url).then(r => r.text()).catch(() => {});
+            const scrf = await fetch(url)
+                .then((r) => r.text())
+                .catch(() => {});
             const id = scrf.match(/\("client_id=[A-Za-z0-9]{32}"\)/);
 
-            if (id && typeof id[0] === 'string') {
+            if (id && typeof id[0] === "string") {
                 clientid = id[0].match(/[A-Za-z0-9]{32}/)[0];
                 break;
             }
@@ -45,12 +54,12 @@ const findBestForPreset = (transcodings, preset) => {
     for (const entry of transcodings) {
         const protocol = entry?.format?.protocol;
 
-        if (entry.snipped || protocol?.includes('encrypted')) {
+        if (entry.snipped || protocol?.includes("encrypted")) {
             continue;
         }
 
         if (entry?.preset?.startsWith(`${preset}_`)) {
-            if (protocol === 'progressive') {
+            if (protocol === "progressive") {
                 return entry;
             }
 
@@ -59,40 +68,9 @@ const findBestForPreset = (transcodings, preset) => {
     }
 
     return inferior;
-}
+};
 
-export default async function(obj) {
-    const clientId = await findClientID();
-    if (!clientId) return { error: "fetch.fail" };
-
-    let link;
-
-    if (obj.shortLink) {
-        obj = {
-            ...obj,
-            ...await resolveRedirectingURL(
-                `https://on.soundcloud.com/${obj.shortLink}`
-            )
-        }
-    }
-
-    if (obj.author && obj.song) {
-        link = `https://soundcloud.com/${obj.author}/${obj.song}`;
-        if (obj.accessKey) {
-            link += `/s-${obj.accessKey}`;
-        }
-    }
-
-    if (!link && obj.shortLink) return { error: "fetch.short_link" };
-    if (!link) return { error: "link.unsupported" };
-
-    const resolveURL = new URL("https://api-v2.soundcloud.com/resolve");
-    resolveURL.searchParams.set("url", link);
-    resolveURL.searchParams.set("client_id", clientId);
-
-    const json = await fetch(resolveURL).then(r => r.json()).catch(() => {});
-    if (!json) return { error: "fetch.fail" };
-
+const downloadTrack = async (json, clientId, obj) => {
     if (json.duration > env.durationLimit * 1000) {
         return { error: "content.too_long" };
     }
@@ -117,7 +95,7 @@ export default async function(obj) {
     // use mp3 if present if user prefers it or if opus isn't available
     if (mp3Media && (obj.format === "mp3" || !selectedStream)) {
         selectedStream = mp3Media;
-        bestAudio = "mp3"
+        bestAudio = "mp3";
     }
 
     if (!selectedStream) {
@@ -129,8 +107,8 @@ export default async function(obj) {
     fileUrl.searchParams.set("track_authorization", json.track_authorization);
 
     const file = await fetch(fileUrl)
-                     .then(async r => new URL((await r.json()).url))
-                     .catch(() => {});
+        .then(async (r) => new URL((await r.json()).url))
+        .catch(() => {});
 
     if (!file) return { error: "fetch.empty" };
 
@@ -144,13 +122,13 @@ export default async function(obj) {
         genre: json.genre?.trim(),
         date: json.display_date?.trim().slice(0, 10),
         copyright: json.license?.trim(),
-    }
+    };
 
     let cover;
     if (json.artwork_url) {
         const coverUrl = json.artwork_url.replace(/-large/, "-t1080x1080");
         const testCover = await fetch(coverUrl)
-            .then(r => r.status === 200)
+            .then((r) => r.status === 200)
             .catch(() => {});
 
         if (testCover) {
@@ -164,10 +142,99 @@ export default async function(obj) {
         filenameAttributes: {
             service: "soundcloud",
             id: json.id,
-            ...fileMetadata
+            ...fileMetadata,
         },
         bestAudio,
         fileMetadata,
-        isHLS: file.pathname.endsWith('.m3u8'),
+        isHLS: file.pathname.endsWith(".m3u8"),
+    };
+};
+
+const downloadPlaylist = async (link, clientId, obj) => {
+    const resolveURL = new URL("https://api-v2.soundcloud.com/resolve");
+    resolveURL.searchParams.set("url", link);
+    resolveURL.searchParams.set("client_id", clientId);
+
+    const json = await fetch(resolveURL)
+        .then((r) => r.json())
+        .catch(() => {});
+    if (!json) return { error: "fetch.fail" };
+
+    const tracks = [];
+
+    for (const track of json.tracks) {
+        const trackResponse = await fetch(
+            `https://api-v2.soundcloud.com/tracks/${track.id}?client_id=${clientId}`,
+        )
+            .then((r) => r.json())
+            .catch(() => {});
+
+        if (!trackResponse) continue;
+
+        tracks.push(await downloadTrack(trackResponse, clientId, obj));
     }
+
+    return {
+        status: "picker",
+        picker: tracks.map((track) => ({
+            type: "audio",
+            url: createStream({
+                service: "soundcloud",
+                type: "proxy",
+                url: track.urls,
+                filename: `${track.filenameAttributes.title}.mp3`,
+            }),
+            thumb: createStream({
+                service: "soundcloud",
+                url: track.cover,
+                type: "proxy",
+            }),
+        })),
+    };
+};
+
+export default async function (obj) {
+    const clientId = await findClientID();
+    if (!clientId) return { error: "fetch.fail" };
+
+    let link;
+
+    if (obj.shortLink) {
+        obj = {
+            ...obj,
+            ...(await resolveRedirectingURL(
+                `https://on.soundcloud.com/${obj.shortLink}`,
+            )),
+        };
+    }
+
+    if (obj.author && obj.song) {
+        link = `https://soundcloud.com/${obj.author}/${obj.song}`;
+        if (obj.accessKey) {
+            link += `/s-${obj.accessKey}`;
+        }
+    }
+
+    if (obj.author && obj.playlist) {
+        link = `https://soundcloud.com/${obj.author}/sets/${obj.playlist}`;
+        if (obj.accessKey) {
+            link += `/s-${obj.accessKey}`;
+        }
+
+        return await downloadPlaylist(link, clientId, obj);
+    }
+
+    if (!link && obj.shortLink) return { error: "fetch.short_link" };
+    if (!link) return { error: "link.unsupported" };
+
+    const resolveURL = new URL("https://api-v2.soundcloud.com/resolve");
+    resolveURL.searchParams.set("url", link);
+    resolveURL.searchParams.set("client_id", clientId);
+
+    const json = await fetch(resolveURL)
+        .then((r) => r.json())
+        .catch(() => {});
+    if (!json) return { error: "fetch.fail" };
+
+    return downloadTrack(json, clientId, obj);
 }
