@@ -163,11 +163,11 @@ all keys in this table are optional.
 | `picker`        | `array`  | array of objects containing the individual media                                               |
 
 #### picker object
-| key          | type      | value                     |
-|:-------------|:----------|:--------------------------|
-| `type`       | `string`  | `photo` / `video` / `gif` |
-| `url`        | `string`  |                           |
-| `thumb`      | `string`  | thumbnail url (optional)  |
+| key          | type      | value                               |
+|:-------------|:----------|:------------------------------------|
+| `type`       | `string`  | `photo` / `video` / `gif` / `audio` |
+| `url`        | `string`  |                                     |
+| `thumb`      | `string`  | thumbnail url (optional)            |
 
 ### error response
 | key          | type     | value                         |
