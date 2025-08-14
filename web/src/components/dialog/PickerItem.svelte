@@ -9,6 +9,7 @@
     import IconMovie from "@tabler/icons-svelte/IconMovie.svelte";
     import IconPhoto from "@tabler/icons-svelte/IconPhoto.svelte";
     import IconGif from "@tabler/icons-svelte/IconGif.svelte";
+    import IconMusic from "@tabler/icons-svelte/IconMusic.svelte";
 
     type Props = {
         item: DialogPickerItem;
@@ -56,6 +57,8 @@
             <IconMovie />
         {:else if itemType === "gif"}
             <IconGif />
+        {:else if itemType === "audio"}
+            <IconMusic />
         {:else}
             <IconPhoto />
         {/if}
@@ -70,6 +73,8 @@
         alt="{$t(`a11y.dialog.picker.item.${itemType}`)} {number}"
     />
     <Skeleton class="picker-image elevated" hidden={hideSkeleton} />
+
+    <span class="picker-item-title">{item.title}</span>
 </button>
 
 <style>
@@ -155,5 +160,25 @@
     .picker-type :global(svg) {
         width: 22px;
         height: 22px;
+    }
+
+    .picker-item-title {
+	position: absolute;
+	z-index: 3;
+	bottom: 0px;
+	left: 50%;
+	border-bottom-left-radius: inherit;
+	border-bottom-right-radius: inherit;
+	transform: translateX(-50%);
+	background-color: rgba(256,256,256,0.5);
+	backdrop-filter: blur(2px);
+	padding: 3px 0px;
+	font-size: 12px;
+	width: 100%;
+	display: -webkit-box;
+	overflow: hidden;
+	-webkit-box-orient: vertical;
+	  -webkit-line-clamp: 2;
+	line-clamp: 2;
     }
 </style>

@@ -189,6 +189,7 @@ const downloadPlaylist = async (link, clientId, obj) => {
                 url: track.cover,
                 type: "proxy",
             }),
+	    title: `${track.filenameAttributes.artist} - ${track.filenameAttributes.title}`
         })),
     };
 };
