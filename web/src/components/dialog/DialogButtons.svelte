@@ -21,5 +21,6 @@
         overflow: scroll;
         border-radius: var(--border-radius);
         min-height: 40px;
+	z-index: 3;
     }
 </style>

@@ -81,6 +81,7 @@
         align-items: flex-start;
         gap: 3px;
         max-width: calc(var(--picker-item-area) * 4);
+	z-index: 3;
     }
 
     .popup-title-container {
