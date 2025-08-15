@@ -167,7 +167,7 @@ const downloadPlaylist = async (link, clientId, obj) => {
             `https://api-v2.soundcloud.com/tracks/${track.id}?client_id=${clientId}`,
         )
             .then((r) => r.json())
-            .catch(() => {});
+            .catch((error) => {});
 
         if (!trackResponse) continue;
 
@@ -182,14 +182,14 @@ const downloadPlaylist = async (link, clientId, obj) => {
                 service: "soundcloud",
                 type: "proxy",
                 url: track.urls,
-                filename: `${track.filenameAttributes.title}.mp3`,
+                filename: `${track.filenameAttributes.title}.${track.urls.split(".").at(-1)}`,
             }),
             thumb: createStream({
                 service: "soundcloud",
                 url: track.cover,
                 type: "proxy",
             }),
-	    title: `${track.filenameAttributes.artist} - ${track.filenameAttributes.title}`
+            title: `${track.filenameAttributes.artist} - ${track.filenameAttributes.title}`,
         })),
     };
 };

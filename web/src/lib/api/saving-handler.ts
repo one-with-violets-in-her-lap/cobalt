@@ -5,20 +5,24 @@ import lazySettingGetter from "$lib/settings/lazy-get";
 
 import { get } from "svelte/store";
 import { t } from "$lib/i18n/translations";
-import { downloadFile } from "$lib/download";
-import { createDialog } from "$lib/state/dialogs";
+import { constructZipFromFiles, downloadFile } from "$lib/download";
+import { createDialog, killDialog } from "$lib/state/dialogs";
 import { downloadButtonState } from "$lib/state/omnibox";
 import { createSavePipeline } from "$lib/task-manager/queue";
 
 import type { CobaltSaveRequestBody } from "$lib/types/api";
 
 type SavingHandlerArgs = {
-    url?: string,
-    request?: CobaltSaveRequestBody,
-    oldTaskId?: string
-}
+    url?: string;
+    request?: CobaltSaveRequestBody;
+    oldTaskId?: string;
+};
 
-export const savingHandler = async ({ url, request, oldTaskId }: SavingHandlerArgs) => {
+export const savingHandler = async ({
+    url,
+    request,
+    oldTaskId,
+}: SavingHandlerArgs) => {
     downloadButtonState.set("think");
 
     const error = (errorText: string) => {
@@ -35,7 +39,7 @@ export const savingHandler = async ({ url, request, oldTaskId }: SavingHandlerAr
             ],
             bodyText: errorText,
         });
-    }
+    };
 
     const getSetting = lazySettingGetter(get(settings));
 
@@ -63,11 +67,13 @@ export const savingHandler = async ({ url, request, oldTaskId }: SavingHandlerAr
         videoQuality: getSetting("save", "videoQuality"),
         youtubeVideoCodec: getSetting("save", "youtubeVideoCodec"),
         youtubeVideoContainer: getSetting("save", "youtubeVideoContainer"),
-        youtubeHLS: env.ENABLE_DEPRECATED_YOUTUBE_HLS ? getSetting("save", "youtubeHLS") : undefined,
+        youtubeHLS: env.ENABLE_DEPRECATED_YOUTUBE_HLS
+            ? getSetting("save", "youtubeHLS")
+            : undefined,
 
         allowH265: getSetting("save", "allowH265"),
         convertGif: getSetting("save", "convertGif"),
-    }
+    };
 
     const response = await API.request(selectedRequest);
 
@@ -79,9 +85,7 @@ export const savingHandler = async ({ url, request, oldTaskId }: SavingHandlerAr
     if (response.status === "error") {
         downloadButtonState.set("error");
 
-        return error(
-            get(t)(response.error.code, response?.error?.context)
-        );
+        return error(get(t)(response.error.code, response?.error?.context));
     }
 
     if (response.status === "redirect") {
@@ -117,11 +121,31 @@ export const savingHandler = async ({ url, request, oldTaskId }: SavingHandlerAr
 
     if (response.status === "picker") {
         downloadButtonState.set("done");
+
         const buttons = [
+            {
+                text: get(t)("button.download_all"),
+                main: false,
+                autoclose: false,
+                action: async () => {
+                    const zip = await constructZipFromFiles(
+                        response.picker.map((file) => file.url),
+                    );
+
+                    killDialog();
+
+                    downloadFile({
+                        file: new File(
+                            [await zip.generateAsync({ type: "blob" })],
+                            "playlist.zip",
+                        ),
+                    });
+                },
+            },
             {
                 text: get(t)("button.done"),
                 main: true,
-                action: () => { },
+                action: () => {},
             },
         ];
 
@@ -148,4 +172,4 @@ export const savingHandler = async ({ url, request, oldTaskId }: SavingHandlerAr
 
     downloadButtonState.set("error");
     return error(get(t)("error.api.unknown_response"));
-}
+};

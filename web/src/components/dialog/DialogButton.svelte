@@ -39,8 +39,10 @@
         class:active={button.main}
         {disabled}
         on:click={async () => {
-            await button.action();
-            closeFunc();
+            await button.action()
+            if (button.autoclose === true || button.autoclose === undefined) {
+		closeFunc();
+	    }
         }}
     >
         {button.text}{seconds ? ` (${seconds})` : ""}

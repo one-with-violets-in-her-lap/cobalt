@@ -27,9 +27,10 @@ type CobaltPartialURLResponse = {
 type CobaltPickerResponse = {
     status: CobaltResponseType.Picker
     picker: {
-        type: 'photo' | 'video' | 'gif',
+        type: 'photo' | 'video' | 'gif' | 'audio',
         url: string,
         thumb?: string,
+	title?: string
     }[];
     audio?: string,
     audioFilename?: string,

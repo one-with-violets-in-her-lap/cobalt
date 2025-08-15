@@ -8,19 +8,20 @@ import { createDialog } from "$lib/state/dialogs";
 
 import type { DialogInfo } from "$lib/types/dialog";
 import type { CobaltFileUrlType } from "$lib/types/api";
+import JSZip from "jszip";
 
 type DownloadFileParams = {
-    url?: string,
-    file?: File,
-    urlType?: CobaltFileUrlType,
-}
+    url?: string;
+    file?: File;
+    urlType?: CobaltFileUrlType;
+};
 
 type SavingDialogParams = {
-    url?: string,
-    file?: File,
-    body?: string,
-    urlType?: CobaltFileUrlType,
-}
+    url?: string;
+    file?: File;
+    body?: string;
+    urlType?: CobaltFileUrlType;
+};
 
 const openSavingDialog = ({ url, file, body, urlType }: SavingDialogParams) => {
     const dialogData: DialogInfo = {
@@ -29,11 +30,11 @@ const openSavingDialog = ({ url, file, body, urlType }: SavingDialogParams) => {
         file,
         url,
         urlType,
-    }
+    };
     if (body) dialogData.bodyText = body;
 
-    createDialog(dialogData)
-}
+    createDialog(dialogData);
+};
 
 export const openFile = (file: File) => {
     const a = document.createElement("a");
@@ -43,17 +44,17 @@ export const openFile = (file: File) => {
     a.download = file.name;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 10_000);
-}
+};
 
 export const shareFile = async (file: File) => {
     return await navigator?.share({
-        files: [ file ],
+        files: [file],
     });
-}
+};
 
 export const openURL = (url: string) => {
-    if (!['http:', 'https:'].includes(new URL(url).protocol)) {
-        return alert('error: invalid url!');
+    if (!["http:", "https:"].includes(new URL(url).protocol)) {
+        return alert("error: invalid url!");
     }
 
     const open = window.open(url, "_blank");
@@ -62,18 +63,18 @@ export const openURL = (url: string) => {
     if (!open) {
         return openSavingDialog({
             url,
-            body: get(t)("dialog.saving.blocked")
+            body: get(t)("dialog.saving.blocked"),
         });
     }
-}
+};
 
 export const shareURL = async (url: string) => {
     return await navigator?.share({ url });
-}
+};
 
 export const copyURL = async (url: string) => {
     return await navigator?.clipboard?.writeText(url);
-}
+};
 
 export const downloadFile = ({ url, file, urlType }: DownloadFileParams) => {
     if (!url && !file) throw new Error("attempted to download void");
@@ -100,7 +101,7 @@ export const downloadFile = ({ url, file, urlType }: DownloadFileParams) => {
             url,
             file,
             body: get(t)("dialog.saving.timeout"),
-            urlType
+            urlType,
         });
     }
 
@@ -130,14 +131,45 @@ export const downloadFile = ({ url, file, urlType }: DownloadFileParams) => {
         if (url) {
             if (pref === "share" && device.supports.share) {
                 return shareURL(url);
-            } else if (pref === "download" && device.supports.directDownload
-                    && !(device.is.iOS && urlType === "redirect")) {
+            } else if (
+                pref === "download" &&
+                device.supports.directDownload &&
+                !(device.is.iOS && urlType === "redirect")
+            ) {
                 return openURL(url);
             } else if (pref === "copy" && !file) {
                 return copyURL(url);
             }
         }
-    } catch { /* catch & ignore */ }
+    } catch {
+        /* catch & ignore */
+    }
 
     return openSavingDialog({ url, file, urlType });
+};
+
+async function fetchFile(url: string): Promise<File> {
+    const response = await fetch(url);
+
+    const filename = response.headers
+        .get("Content-Disposition")
+        ?.split("filename=")
+        .at(-1)
+        ?.replace(/"/g, "");
+
+    return new File([await response.blob()], filename || "audio");
+}
+
+export async function constructZipFromFiles(urls: string[]) {
+    const zip = new JSZip();
+
+    const files = await Promise.allSettled(urls.map(fetchFile));
+
+    files.forEach(
+        (fileResult) =>
+            fileResult.status === "fulfilled" &&
+            zip.file(fileResult.value.name, fileResult.value),
+    );
+
+    return zip;
 }
