@@ -137,7 +137,7 @@ export const savingHandler = async ({
                     downloadFile({
                         file: new File(
                             [await zip.generateAsync({ type: "blob" })],
-                            "playlist.zip",
+                            `${response.pickerTitle || 'files'}.zip`,
                         ),
                     });
                 },

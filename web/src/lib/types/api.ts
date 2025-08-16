@@ -26,6 +26,7 @@ type CobaltPartialURLResponse = {
 
 type CobaltPickerResponse = {
     status: CobaltResponseType.Picker
+    pickerTitle?: string
     picker: {
         type: 'photo' | 'video' | 'gif' | 'audio',
         url: string,

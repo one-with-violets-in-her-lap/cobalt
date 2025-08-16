@@ -105,7 +105,7 @@ export default function({
                 case "bsky":
 		case "soundcloud":
                 case "xiaohongshu":
-                    params = { picker: r.picker };
+                    params = { picker: r.picker, pickerTitle: r.pickerTitle };
                     break;
 
                 case "tiktok":

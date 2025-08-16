@@ -176,6 +176,7 @@ const downloadPlaylist = async (link, clientId, obj) => {
 
     return {
         status: "picker",
+	pickerTitle: json.title,
         picker: tracks.map((track) => ({
             type: "audio",
             url: createStream({
