@@ -54,6 +54,29 @@ export function merge(a, b) {
     return a;
 }
 
+/**
+ * Splits array into chunks
+ *
+ * @template TItem
+ * @param {TItem[]} items - The array of items to be split into chunks
+ * @param {number} chunkSize - The maximum size of each chunk. Must be greater than 0
+ * @returns {TItem[][]} An array of chunks
+ * @throws {Error} Throws an error if `chunkSize` is less than or equal to 0
+ */
+export function getChunked(items, chunkSize) {
+    const chunks = []
+
+    if (chunkSize <= 0) {
+	throw new Error('Chunk size must be greater than 0')
+    }
+
+    for (let index = 0; index < items.length; index += chunkSize) {
+	chunks.push(items.slice(index, index + chunkSize))
+    }
+
+    return chunks
+}
+
 export function splitFilenameExtension(filename) {
     const parts = filename.split('.');
     const ext = parts.pop();

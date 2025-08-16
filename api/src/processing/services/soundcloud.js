@@ -1,6 +1,7 @@
 import { env } from "../../config.js";
 import { resolveRedirectingURL } from "../url.js";
 import { createStream } from "../../stream/manage.js";
+import { getChunked } from "../../misc/utils.js";
 
 const cachedID = {
     version: "",
@@ -160,23 +161,33 @@ const downloadPlaylist = async (link, clientId, obj) => {
         .catch(() => {});
     if (!json) return { error: "fetch.fail" };
 
-    const tracks = [];
+    const trackPromises = [];
 
-    for (const track of json.tracks) {
-        const trackResponse = await fetch(
-            `https://api-v2.soundcloud.com/tracks/${track.id}?client_id=${clientId}`,
+    const chunkedPlaylistTracks = getChunked(json.tracks, 50);
+
+    for (const tracksChunk of chunkedPlaylistTracks) {
+        const ids = tracksChunk.map((track) => track.id).join(",");
+
+        const tracksResponse = await fetch(
+            `https://api-v2.soundcloud.com/tracks?client_id=${clientId}&ids=${ids}`,
         )
             .then((r) => r.json())
-            .catch((error) => {});
+            .catch(() => {});
 
-        if (!trackResponse) continue;
+        if (!tracksResponse) continue;
 
-        tracks.push(await downloadTrack(trackResponse, clientId, obj));
+        tracksResponse.forEach((trackJson) => {
+            trackPromises.push(downloadTrack(trackJson, clientId, obj));
+        });
     }
+
+    const tracks = (await Promise.allSettled(trackPromises))
+        .filter((result) => result.status === "fulfilled")
+        .map((result) => result.value);
 
     return {
         status: "picker",
-	pickerTitle: json.title,
+        pickerTitle: json.title,
         picker: tracks.map((track) => ({
             type: "audio",
             url: createStream({
