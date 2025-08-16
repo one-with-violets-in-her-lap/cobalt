@@ -12,8 +12,10 @@
     import DialogButtons from "$components/dialog/DialogButtons.svelte";
 
     import IconBoxMultiple from "@tabler/icons-svelte/IconBoxMultiple.svelte";
+    import IconLoader2 from "@tabler/icons-svelte/IconLoader2.svelte";
 
     export let id: string;
+    export let loading: boolean;
     export let items: Optional<DialogPickerItem[]> = undefined;
     export let buttons: Optional<DialogButton[]> = undefined;
     export let dismissable = true;
@@ -35,6 +37,7 @@
     <div
         class="dialog-body picker-dialog"
         class:three-columns={items && items.length <= 3}
+	class:loading
     >
         <div class="popup-header">
             <div class="popup-title-container">
@@ -56,9 +59,20 @@
                 {/each}
             {/if}
         </div>
-        {#if buttons}
-            <DialogButtons {buttons} closeFunc={close} />
-        {/if}
+
+        <footer class="picker-footer">
+	    {#if buttons}
+		<div class="picker-buttons">
+		    <DialogButtons {buttons} closeFunc={close} />
+		</div>
+	    {/if}
+
+	    <div
+		class="spinner-icon"
+	    >
+		<IconLoader2 />
+	    </div>
+	</footer>
     </div>
 </DialogContainer>
 
@@ -115,6 +129,16 @@
         gap: var(--picker-item-gap);
     }
 
+    .picker-footer {
+	z-index: 3;
+	width: 100%;
+	position: relative;
+    }
+
+    .picker-buttons {
+	transition: all 0.3s ease;
+    }
+	
     .three-columns .picker-body {
         grid-template-columns: 1fr 1fr 1fr;
     }
@@ -126,6 +150,29 @@
     :global(.picker-item) {
         width: var(--picker-item-size);
         height: var(--picker-item-size);
+    }
+
+    .spinner-icon {
+	position: absolute;
+	width: 22px;
+	height: 22px;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	transition: all 0.3s ease;
+    }
+
+    .spinner-icon :global(svg) {
+        animation: spinner 0.7s infinite linear;
+    }
+
+    .picker-dialog:not(.loading) .spinner-icon {
+	opacity: 0;
+    }
+
+    .picker-dialog.loading .picker-buttons {
+	opacity: 0;
+	transform: scale(0);
     }
 
     @media screen and (max-width: 535px) {

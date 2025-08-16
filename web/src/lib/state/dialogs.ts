@@ -15,6 +15,18 @@ export function createDialog(newData: DialogInfo) {
     });
 }
 
+export function updateDialog(id: string, newData: Partial<DialogInfo>) {
+    update((popups) => {
+	const index = popups.findIndex(popup => popup.id === id)
+
+	if (index !== -1) {
+	    popups[index] = {...popups[index], ...newData}
+	}
+
+	return popups
+    })
+}
+
 export function killDialog() {
     update((popups) => {
         popups.pop()

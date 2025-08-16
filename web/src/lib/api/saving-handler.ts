@@ -6,7 +6,7 @@ import lazySettingGetter from "$lib/settings/lazy-get";
 import { get } from "svelte/store";
 import { t } from "$lib/i18n/translations";
 import { constructZipFromFiles, downloadFile } from "$lib/download";
-import { createDialog, killDialog } from "$lib/state/dialogs";
+import { createDialog, killDialog, updateDialog } from "$lib/state/dialogs";
 import { downloadButtonState } from "$lib/state/omnibox";
 import { createSavePipeline } from "$lib/task-manager/queue";
 
@@ -128,6 +128,8 @@ export const savingHandler = async ({
                 main: false,
                 autoclose: false,
                 action: async () => {
+                    updateDialog("download-picker", { loading: true });
+
                     const zip = await constructZipFromFiles(
                         response.picker.map((file) => ({
                             url: file.url,

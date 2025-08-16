@@ -22,6 +22,7 @@ export type DialogPickerItem = {
 
 type Dialog = {
     id: string,
+    loading?: boolean,
     dismissable?: boolean,
 };
 
