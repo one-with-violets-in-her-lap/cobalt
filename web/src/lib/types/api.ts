@@ -32,6 +32,7 @@ type CobaltPickerResponse = {
         url: string,
         thumb?: string,
 	title?: string
+	filename?: string
     }[];
     audio?: string,
     audioFilename?: string,

@@ -188,21 +188,29 @@ const downloadPlaylist = async (link, clientId, obj) => {
     return {
         status: "picker",
         pickerTitle: json.title,
-        picker: tracks.map((track) => ({
-            type: "audio",
-            url: createStream({
-                service: "soundcloud",
-                type: "proxy",
-                url: track.urls,
-                filename: `${track.filenameAttributes.title}.${track.urls.split(".").at(-1)}`,
-            }),
-            thumb: createStream({
-                service: "soundcloud",
-                url: track.cover,
-                type: "proxy",
-            }),
-            title: `${track.filenameAttributes.artist} - ${track.filenameAttributes.title}`,
-        })),
+        picker: tracks.map((track) => {
+            const format = new URL(track.urls).pathname.split(".").at(-1);
+            const filename = `${track.filenameAttributes.title}.${format}`;
+
+            return {
+                type: "audio",
+                url: obj.alwaysProxy
+                    ? createStream({
+                          service: "soundcloud",
+                          type: "proxy",
+                          url: track.urls,
+                          filename,
+                      })
+                    : track.urls,
+                thumb: createStream({
+                    service: "soundcloud",
+                    url: track.cover,
+                    type: "proxy",
+                }),
+                title: `${track.filenameAttributes.artist} - ${track.filenameAttributes.title}`,
+                filename,
+            };
+        }),
     };
 };
 

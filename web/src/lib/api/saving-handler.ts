@@ -129,7 +129,10 @@ export const savingHandler = async ({
                 autoclose: false,
                 action: async () => {
                     const zip = await constructZipFromFiles(
-                        response.picker.map((file) => file.url),
+                        response.picker.map((file) => ({
+                            url: file.url,
+                            filename: file.filename,
+                        })),
                     );
 
                     killDialog();
@@ -137,7 +140,7 @@ export const savingHandler = async ({
                     downloadFile({
                         file: new File(
                             [await zip.generateAsync({ type: "blob" })],
-                            `${response.pickerTitle || 'files'}.zip`,
+                            `${response.pickerTitle || "files"}.zip`,
                         ),
                     });
                 },

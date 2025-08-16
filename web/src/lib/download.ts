@@ -148,24 +148,33 @@ export const downloadFile = ({ url, file, urlType }: DownloadFileParams) => {
     return openSavingDialog({ url, file, urlType });
 };
 
-async function fetchFile(url: string): Promise<File> {
+async function fetchFile(url: string, filename?: string): Promise<File> {
     const response = await fetch(url);
 
-    const filename = response.headers
+    const filenameFromHeaders = response.headers
         .get("Content-Disposition")
         ?.split("filename=")
         .at(-1)
         ?.replace(/"/g, "");
 
-    return new File([await response.blob()], filename || "audio");
+    const filenameFromUrl = new URL(url).pathname.split("/").pop();
+
+    return new File(
+        [await response.blob()],
+        filename || filenameFromHeaders || filenameFromUrl || "file",
+    );
 }
 
-export async function constructZipFromFiles(urls: string[]) {
+export async function constructZipFromFiles(
+    files: { url: string; filename?: string }[],
+) {
     const zip = new JSZip();
 
-    const files = await Promise.allSettled(urls.map(fetchFile));
+    const fetchedFiles = await Promise.allSettled(
+        files.map((file) => fetchFile(file.url, file.filename)),
+    );
 
-    files.forEach(
+    fetchedFiles.forEach(
         (fileResult) =>
             fileResult.status === "fulfilled" &&
             zip.file(fileResult.value.name, fileResult.value),
