@@ -2,6 +2,7 @@ import { env } from "../../config.js";
 import { resolveRedirectingURL } from "../url.js";
 import { createStream } from "../../stream/manage.js";
 import { getChunked } from "../../misc/utils.js";
+import createFilename from "../create-filename.js";
 
 const cachedID = {
     version: "",
@@ -151,7 +152,7 @@ const downloadTrack = async (json, clientId, obj) => {
     };
 };
 
-const downloadPlaylist = async (link, clientId, obj) => {
+const downloadPlaylist = async (link, clientId, obj, params) => {
     const resolveURL = new URL("https://api-v2.soundcloud.com/resolve");
     resolveURL.searchParams.set("url", link);
     resolveURL.searchParams.set("client_id", clientId);
@@ -190,11 +191,20 @@ const downloadPlaylist = async (link, clientId, obj) => {
         pickerTitle: json.title,
         picker: tracks.map((track) => {
             const format = new URL(track.urls).pathname.split(".").at(-1);
-            const filename = `${track.filenameAttributes.title}.${format}`;
+
+            const filename =
+                createFilename(
+                    track.filenameAttributes,
+                    params.filenameStyle,
+                    true,
+                    false,
+                ) +
+                "." +
+                format;
 
             return {
                 type: "audio",
-                url: obj.alwaysProxy
+                url: params.alwaysProxy
                     ? createStream({
                           service: "soundcloud",
                           type: "proxy",
@@ -214,7 +224,7 @@ const downloadPlaylist = async (link, clientId, obj) => {
     };
 };
 
-export default async function (obj) {
+export default async function (obj, params) {
     const clientId = await findClientID();
     if (!clientId) return { error: "fetch.fail" };
 
@@ -242,7 +252,7 @@ export default async function (obj) {
             link += `/s-${obj.accessKey}`;
         }
 
-        return await downloadPlaylist(link, clientId, obj);
+        return await downloadPlaylist(link, clientId, obj, params);
     }
 
     if (!link && obj.shortLink) return { error: "fetch.short_link" };

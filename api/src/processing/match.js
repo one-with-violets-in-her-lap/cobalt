@@ -181,7 +181,7 @@ export default async function({ host, patternMatch, params, authType }) {
                 r = await soundcloud({
                     ...patternMatch,
                     format: params.audioFormat,
-                });
+                }, params);
                 break;
 
             case "instagram":
