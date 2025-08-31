@@ -158,6 +158,7 @@
 	height: 22px;
 	top: 50%;
 	left: 50%;
+	color: var(--secondary);
 	transform: translate(-50%, -50%);
 	transition: all 0.3s ease;
     }

@@ -74,7 +74,7 @@
     />
     <Skeleton class="picker-image elevated" hidden={hideSkeleton} />
 
-    <span class="picker-item-title">{item.title}</span>
+    <span class="picker-item-title" title={item.title}>{item.title}</span>
 </button>
 
 <style>
@@ -170,9 +170,9 @@
 	border-bottom-left-radius: inherit;
 	border-bottom-right-radius: inherit;
 	transform: translateX(-50%);
-	background-color: rgba(256,256,256,0.5);
-	backdrop-filter: blur(2px);
-	padding: 3px 0px;
+	background-color: color-mix(in srgb, var(--primary) 70%, transparent);
+	backdrop-filter: blur(4px);
+	padding-top: 3px;
 	font-size: 12px;
 	width: 100%;
 	display: -webkit-box;
